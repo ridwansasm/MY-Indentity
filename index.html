@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Ocean Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <style>
+        :root {
+            --bg: #041428;
+            --fg: #e0f4ff;
+            --muted: #3d7a9e;
+            --accent: #00e5c7;
+            --accent-secondary: #00a8ff;
+            --card: rgba(4, 35, 60, 0.85);
+            --border: rgba(0, 229, 199, 0.35);
+            --glow: rgba(0, 229, 199, 0.6);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        
+        .glass-card {
+            background: var(--card);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 
+                0 0 60px rgba(0, 229, 199, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            color: var(--bg);
+            font-weight: 700;
+            padding: 1.1rem 2.5rem;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 
+                0 15px 40px rgba(0, 229, 199, 0.5),
+                0 5px 20px rgba(0, 168, 255, 0.3);
+        }
+        
+        .btn-primary:focus {
+            outline: 3px solid var(--accent);
+            outline-offset: 3px;
+        }
+        
+        .btn-lang {
+            background: rgba(0, 40, 70, 0.6);
+            color: var(--fg);
+            font-weight: 600;
+            padding: 0.8rem 1.4rem;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .btn-lang:hover {
+            background: rgba(0, 229, 199, 0.15);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .btn-lang:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        
+        .btn-lang.active {
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            color: var(--bg);
+            border-color: transparent;
+            box-shadow: 0 5px 25px rgba(0, 229, 199, 0.4);
+        }
+        
+        .time-card {
+            background: linear-gradient(145deg, rgba(0, 50, 90, 0.7), rgba(0, 30, 60, 0.8));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 168, 255, 0.25);
+            border-radius: 18px;
+            padding: 1.5rem 1.2rem;
+            min-width: 160px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .time-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+        
+        .time-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 229, 199, 0.2);
+            border-color: var(--accent);
+        }
+        
+        .time-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .city-name {
+            color: var(--accent-secondary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .date-text {
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-8px) rotate(1deg); }
+            75% { transform: translateY(4px) rotate(-1deg); }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        
+        .shimmer-text {
+            background: linear-gradient(
+                90deg, 
+                var(--accent), 
+                var(--accent-secondary), 
+                var(--fg),
+                var(--accent-secondary),
+                var(--accent)
+            );
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 4s linear infinite;
+        }
+        
+        .footer-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.5rem, 5vw, 3.5rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--fg));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+        
+        .section-title {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            border-radius: 2px;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .floating, .shimmer-text {
+                animation: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .time-card {
+                min-width: 140px;
+                padding: 1.2rem 1rem;
+            }
+            .time-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container" aria-hidden="true"></div>
+    
+    <main class="content">
+        <!-- Header -->
+        <header class="text-center mb-10 mt-6">
+            <h1 class="font-display text-4xl md:text-6xl lg:text-7xl font-black mb-4 floating shimmer-text" data-translate="title">
+                Retro Workspace
+            </h1>
+            <p class="text-lg md:text-xl text-[#3d7a9e]" data-translate="subtitle">
+                Ocean Blue Productivity Hub
+            </p>
+        </header>
+        
+        <!-- Time Section -->
+        <section class="glass-card p-6 md:p-8 mb-8 w-full max-w-4xl" aria-label="World Clock">
+            <h2 class="font-display text-xl md:text-2xl mb-6 text-center text-[#00a8ff] section-title" data-translate="worldTime">
+                World Time
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+                <article class="time-card">
+                    <div class="city-name" data-translate="jakarta">Jakarta</div>
+                    <div class="time-value" id="time-jakarta" aria-live="polite">00:00:00</div>
+                    <div class="date-text" id="date-jakarta"></div>
+                </article>
+                <article class="time-card">
+                    <div class="city-name" data-translate="tokyo">Tokyo</div>
+                    <div class="time-value" id="time-tokyo" aria-live="polite">00:00:00</div>
+                    <div class="date-text" id="date-tokyo"></div>
+                </article>
+                <article class="time-card">
+                    <div class="city-name" data-translate="berlin">Berlin</div>
+                    <div class="time-value" id="time-berlin" aria-live="polite">00:00:00</div>
+                    <div class="date-text" id="date-berlin"></div>
+                </article>
+            </div>
+        </section>
+        
+        <!-- Language Selection -->
+        <section class="glass-card p-5 md:p-6 mb-8" aria-label="Language Selection">
+            <h3 class="font-display text-lg mb-4 text-center text-[#00e5c7] section-title" data-translate="selectLanguage">
+                Select Language
+            </h3>
+            <div class="flex flex-wrap justify-center gap-3" role="group" aria-label="Language buttons">
+                <button class="btn-lang active" onclick="setLanguage('id')" data-lang-btn="id" aria-pressed="true">
+                    Bahasa Indonesia
+                </button>
+                <button class="btn-lang" onclick="setLanguage('en')" data-lang-btn="en" aria-pressed="false">
+                    English
+                </button>
+                <button class="btn-lang" onclick="setLanguage('ja')" data-lang-btn="ja" aria-pressed="false">
+                    日本語
+                </button>
+                <button class="btn-lang" onclick="setLanguage('de')" data-lang-btn="de" aria-pressed="false">
+                    Deutsch
+                </button>
+            </div>
+        </section>
+        
+        <!-- Action Buttons -->
+        <section class="flex flex-col sm:flex-row gap-4 md:gap-6 mb-12" aria-label="Main Actions">
+            <a href="https://ridwansasm.github.io/Portofolio-saya/" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="btn-primary text-center min-w-[200px]"
+               aria-label="Open Portfolio">
+                <span data-translate="portfolio">My Portfolio</span>
+            </a>
+            <a href="https://ridwansasm.github.io/MY-CV/" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="btn-primary text-center min-w-[200px]"
+               aria-label="Open CV">
+                <span data-translate="cv">My CV</span>
+            </a>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="text-center mt-auto pb-8">
+            <p class="footer-text">
+                Made with Ridwan Sasmita
+            </p>
+        </footer>
+    </main>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        
+        // === THREE.JS SCENE SETUP ===
+        let scene = null;
+        let camera = null;
+        let renderer = null;
+        let workers = [];
+        let particles = null;
+        let floatingShapes = [];
+        let oceanWaves = null;
+        let clock = null;
+        let animationId = null;
+        
+        function initThreeJS() {
+            clock = new THREE.Clock();
+            const container = document.getElementById('canvas-container');
+            
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x041428, 0.012);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 8, 28);
+            camera.lookAt(0, 2, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+            
+            // Lighting
+            setupLighting();
+            
+            // Create scene elements
+            createOceanFloor();
+            createRetroWorkers();
+            createParticleSystem();
+            createFloatingGeometry();
+            
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start animation loop
+            animate();
+        }
+        
+        function setupLighting() {
+            // Ambient
+            const ambient = new THREE.AmbientLight(0x0066aa, 0.4);
+            scene.add(ambient);
+            
+            // Main directional light
+            const dirLight = new THREE.DirectionalLight(0x00e5c7, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+            
+            // Accent lights
+            const pointLight1 = new THREE.PointLight(0x00e5c7, 3, 40);
+            pointLight1.position.set(-15, 10, 10);
+            scene.add(pointLight1);
+            
+            const pointLight2 = new THREE.PointLight(0x00a8ff, 3, 40);
+            pointLight2.position.set(15, 8, -10);
+            scene.add(pointLight2);
+            
+            const pointLight3 = new THREE.PointLight(0x00ffff, 2, 30);
+            pointLight3.position.set(0, 15, 0);
+            scene.add(pointLight3);
+        }
+        
+        function createOceanFloor() {
+            const geometry = new THREE.PlaneGeometry(150, 150, 80, 80);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x042040,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.4
+            });
+            
+            oceanWaves = new THREE.Mesh(geometry, material);
+            oceanWaves.rotation.x = -Math.PI / 2;
+            oceanWaves.position.y = -6;
+            scene.add(oceanWaves);
+        }
+        
+        function createRetroWorkers() {
+            const colors = [0x00e5c7, 0x00a8ff, 0x00d4aa, 0x40c4ff, 0x00bcd4];
+            
+            for (let i = 0; i < 7; i++) {
+                const worker = buildLowPolyWorker(colors[i % colors.length]);
+                worker.position.set(
+                    (Math.random() - 0.5) * 35,
+                    Math.random() * 2,
+                    (Math.random() - 0.5) * 25 - 8
+                );
+                worker.userData = {
+                    baseY: worker.position.y,
+                    speed: Math.random() * 0.8 + 0.4,
+                    phaseOffset: Math.random() * Math.PI * 2,
+                    workSpeed: Math.random() * 2 + 1
+                };
+                workers.push(worker);
+                scene.add(worker);
+            }
+        }
+        
+        function buildLowPolyWorker(accentColor) {
+            const group = new THREE.Group();
+            
+            // Body - boxy retro style
+            const bodyGeo = new THREE.BoxGeometry(1.4, 2.2, 1);
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: accentColor,
+                flatShading: true,
+                metalness: 0.3,
+                roughness: 0.7
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.1;
+            group.add(body);
+            
+            // Head
+            const headGeo = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+            const headMat = new THREE.MeshStandardMaterial({
+                color: 0xf0f8ff,
+                flatShading: true
+            });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.6;
+            group.add(head);
+            
+            // Visor/glasses (retro style)
+            const visorGeo = new THREE.BoxGeometry(0.95, 0.3, 0.2);
+            const visorMat = new THREE.MeshStandardMaterial({
+                color: 0x001830,
+                flatShading: true,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            const visor = new THREE.Mesh(visorGeo, visorMat);
+            visor.position.set(0, 2.65, 0.4);
+            group.add(visor);
+            
+            // Arms
+            const armGeo = new THREE.BoxGeometry(0.35, 1.6, 0.35);
+            const armMat = new THREE.MeshStandardMaterial({
+                color: 0x2a5a7a,
+                flatShading: true
+            });
+            
+            const leftArm = new THREE.Mesh(armGeo, armMat);
+            leftArm.position.set(-0.9, 1.2, 0);
+            leftArm.name = 'leftArm';
+            group.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeo, armMat);
+            rightArm.position.set(0.9, 1.2, 0);
+            rightArm.name = 'rightArm';
+            group.add(rightArm);
+            
+            // Desk/laptop
+            const deskGeo = new THREE.BoxGeometry(1.8, 0.15, 1.2);
+            const deskMat = new THREE.MeshStandardMaterial({
+                color: 0x0a3050,
+                flatShading: true
+            });
+            const desk = new THREE.Mesh(deskGeo, deskMat);
+            desk.position.set(0, 0.1, 1.2);
+            group.add(desk);
+            
+            // Screen glow
+            const screenGeo = new THREE.BoxGeometry(1.2, 0.8, 0.05);
+            const screenMat = new THREE.MeshStandardMaterial({
+                color: accentColor,
+                emissive: accentColor,
+                emissiveIntensity: 0.5,
+                flatShading: true
+            });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.set(0, 0.6, 1.6);
+            screen.rotation.x = -0.2;
+            group.add(screen);
+            
+            return group;
+        }
+        
+        function createParticleSystem() {
+            const count = 600;
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+            const sizes = new Float32Array(count);
+            
+            const colorOptions = [
+                new THREE.Color(0x00e5c7),
+                new THREE.Color(0x00a8ff),
+                new THREE.Color(0xffffff),
+                new THREE.Color(0x40c4ff)
+            ];
+            
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                
+                positions[i3] = (Math.random() - 0.5) * 120;
+                positions[i3 + 1] = Math.random() * 40;
+                positions[i3 + 2] = (Math.random() - 0.5) * 120;
+                
+                const col = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                colors[i3] = col.r;
+                colors[i3 + 1] = col.g;
+                colors[i3 + 2] = col.b;
+                
+                sizes[i] = Math.random() * 0.5 + 0.2;
+            }
+            
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.4,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending
+            });
+            
+            particles = new THREE.Points(geometry, material);
+            scene.add(particles);
+        }
+        
+        function createFloatingGeometry() {
+            const geometries = [
+                new THREE.OctahedronGeometry(0.6, 0),
+                new THREE.TetrahedronGeometry(0.6, 0),
+                new THREE.IcosahedronGeometry(0.5, 0),
+                new THREE.DodecahedronGeometry(0.5, 0)
+            ];
+            
+            for (let i = 0; i < 20; i++) {
+                const geo = geometries[Math.floor(Math.random() * geometries.length)];
+                const mat = new THREE.MeshStandardMaterial({
+                    color: Math.random() > 0.5 ? 0x00e5c7 : 0x00a8ff,
+                    flatShading: true,
+                    transparent: true,
+                    opacity: 0.75,
+                    metalness: 0.4,
+                    roughness: 0.6
+                });
+                
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(
+                    (Math.random() - 0.5) * 50,
+                    Math.random() * 20 + 3,
+                    (Math.random() - 0.5) * 50
+                );
+                
+                mesh.userData = {
+                    rotSpeed: {
+                        x: (Math.random() - 0.5) * 0.03,
+                        y: (Math.random() - 0.5) * 0.03,
+                        z: (Math.random() - 0.5) * 0.02
+                    },
+                    floatPhase: Math.random() * Math.PI * 2,
+                    floatSpeed: Math.random() * 0.6 + 0.3,
+                    baseY: mesh.position.y
+                };
+                
+                floatingShapes.push(mesh);
+                scene.add(mesh);
+            }
+        }
+        
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            const elapsed = clock.getElapsedTime();
+            
+            // Animate ocean waves
+            if (oceanWaves) {
+                const positions = oceanWaves.geometry.attributes.position;
+                for (let i = 0; i < positions.count; i++) {
+                    const x = positions.getX(i);
+                    const z = positions.getZ(i);
+                    const wave = Math.sin(x * 0.08 + elapsed * 0.8) * 0.6 + 
+                                 Math.cos(z * 0.08 + elapsed * 0.6) * 0.6;
+                    positions.setY(i, wave);
+                }
+                positions.needsUpdate = true;
+            }
+            
+            // Animate workers
+            workers.forEach((worker) => {
+                const { baseY, speed, phaseOffset, workSpeed } = worker.userData;
+                
+                // Floating motion
+                worker.position.y = baseY + Math.sin(elapsed * speed + phaseOffset) * 0.4;
+                
+                // Gentle rotation
+                worker.rotation.y = Math.sin(elapsed * 0.3 + phaseOffset) * 0.15;
+                
+                // Arm typing animation
+                worker.children.forEach(child => {
+                    if (child.name === 'leftArm') {
+                        child.rotation.x = Math.sin(elapsed * workSpeed * 3) * 0.25;
+                    } else if (child.name === 'rightArm') {
+                        child.rotation.x = Math.cos(elapsed * workSpeed * 3) * 0.25;
+                    }
+                });
+            });
+            
+            // Animate particles
+            if (particles) {
+                particles.rotation.y = elapsed * 0.015;
+                
+                const positions = particles.geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i + 1] += 0.015;
+                    if (positions[i + 1] > 40) {
+                        positions[i + 1] = 0;
+                        positions[i] = (Math.random() - 0.5) * 120;
+                        positions[i + 2] = (Math.random() - 0.5) * 120;
+                    }
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            // Animate floating shapes
+            floatingShapes.forEach((shape) => {
+                const { rotSpeed, floatPhase, floatSpeed, baseY } = shape.userData;
+                
+                shape.rotation.x += rotSpeed.x;
+                shape.rotation.y += rotSpeed.y;
+                shape.rotation.z += rotSpeed.z;
+                
+                shape.position.y = baseY + Math.sin(elapsed * floatSpeed + floatPhase) * 1.5;
+            });
+            
+            // Subtle camera movement
+            camera.position.x = Math.sin(elapsed * 0.08) * 3;
+            camera.position.y = 8 + Math.sin(elapsed * 0.1) * 1.5;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }
+        
+        // Initialize Three.js
+        initThreeJS();
+    </script>
+    
+    <script>
+        // === TRANSLATION SYSTEM ===
+        const translations = {
+            id: {
+                title: 'Retro Workspace',
+                subtitle: 'Pusat Produktivitas Biru Laut',
+                worldTime: 'Waktu Dunia',
+                jakarta: 'Jakarta',
+                tokyo: 'Tokyo',
+                berlin: 'Berlin',
+                selectLanguage: 'Pilih Bahasa',
+                portfolio: 'Portofolio Saya',
+                cv: 'CV Saya',
+                days: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+                months: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+            },
+            en: {
+                title: 'Retro Workspace',
+                subtitle: 'Ocean Blue Productivity Hub',
+                worldTime: 'World Time',
+                jakarta: 'Jakarta',
+                tokyo: 'Tokyo',
+                berlin: 'Berlin',
+                selectLanguage: 'Select Language',
+                portfolio: 'My Portfolio',
+                cv: 'My CV',
+                days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                months: ['January', 'February', 'March', 'April', 'May', 'June', 
+                         'July', 'August', 'September', 'October', 'November', 'December']
+            },
+            ja: {
+                title: 'レトロワークスペース',
+                subtitle: 'オーシャンブルー生産性ハブ',
+                worldTime: '世界の時間',
+                jakarta: 'ジャカルタ',
+                tokyo: '東京',
+                berlin: 'ベルリン',
+                selectLanguage: '言語を選択',
+                portfolio: 'ポートフォリオ',
+                cv: '履歴書',
+                days: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+                months: ['1月', '2月', '3月', '4月', '5月', '6月', 
+                         '7月', '8月', '9月', '10月', '11月', '12月']
+            },
+            de: {
+                title: 'Retro Arbeitsbereich',
+                subtitle: 'Ozeanblaues Produktivitätszentrum',
+                worldTime: 'Weltzeit',
+                jakarta: 'Jakarta',
+                tokyo: 'Tokio',
+                berlin: 'Berlin',
+                selectLanguage: 'Sprache wählen',
+                portfolio: 'Mein Portfolio',
+                cv: 'Mein Lebenslauf',
+                days: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
+                months: ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                         'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+            }
+        };
+        
+        let currentLanguage = 'id';
+        
+        // Make setLanguage globally accessible
+        window.setLanguage = function(lang) {
+            currentLanguage = lang;
+            
+            // Update all translatable elements
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            
+            // Update button states
+            document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+                const isActive = btn.getAttribute('data-lang-btn') === lang;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-pressed', isActive);
+            });
+            
+            // Update date displays
+            updateAllTimes();
+        };
+        
+        // === TIME SYSTEM ===
+        function getTimeInTimezone(offsetHours) {
+            const now = new Date();
+            const utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+            return new Date(utcMs + (offsetHours * 3600000));
+        }
+        
+        function getBerlinOffset() {
+            const now = new Date();
+            const year = now.getFullYear();
+            
+            // EU DST: Last Sunday of March to Last Sunday of October
+            const marchLast = new Date(year, 2, 31);
+            while (marchLast.getDay() !== 0) marchLast.setDate(marchLast.getDate() - 1);
+            
+            const octoberLast = new Date(year, 9, 31);
+            while (octoberLast.getDay() !== 0) octoberLast.setDate(octoberLast.getDate() - 1);
+            
+            const dstStart = new Date(year, 2, marchLast.getDate(), 2, 0, 0);
+            const dstEnd = new Date(year, 9, octoberLast.getDate(), 3, 0, 0);
+            
+            return (now >= dstStart && now < dstEnd) ? 2 : 1;
+        }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-GB', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        function formatDate(date, lang) {
+            const t = translations[lang];
+            const dayName = t.days[date.getDay()];
+            const day = date.getDate();
+            const month = t.months[date.getMonth()];
+            const year = date.getFullYear();
+            
+            return `${dayName}, ${day} ${month} ${year}`;
+        }
+        
+        function updateAllTimes() {
+            // Jakarta (UTC+7)
+            const jakarta = getTimeInTimezone(7);
+            document.getElementById('time-jakarta').textContent = formatTime(jakarta);
+            document.getElementById('date-jakarta').textContent = formatDate(jakarta, currentLanguage);
+            
+            // Tokyo (UTC+9)
+            const tokyo = getTimeInTimezone(9);
+            document.getElementById('time-tokyo').textContent = formatTime(tokyo);
+            document.getElementById('date-tokyo').textContent = formatDate(tokyo, currentLanguage);
+            
+            // Berlin (UTC+1 or UTC+2 with DST)
+            const berlinOffset = getBerlinOffset();
+            const berlin = getTimeInTimezone(berlinOffset);
+            document.getElementById('time-berlin').textContent = formatTime(berlin);
+            document.getElementById('date-berlin').textContent = formatDate(berlin, currentLanguage);
+        }
+        
+        // Initialize time updates
+        updateAllTimes();
+        setInterval(updateAllTimes, 1000);
+        
+        // Set initial language
+        window.setLanguage('id');
+    </script>
+</body>
+</html>
